@@ -1,6 +1,7 @@
-const createNextVideoConfig = require('next-video/config')
+import { withNextVideo } from 'next-video/process';
+
 
 /** @type {import('next').NextConfig} */
-const nextConfig = createNextVideoConfig({})
+    const nextConfig = {};
 
-module.exports = nextConfig
+export default withNextVideo(nextConfig);

@@ -53,3 +53,10 @@ videos/*
 !videos/*.js
 !videos/*.ts
 public/_next-video
+
+# next-video
+videos --force/*
+!videos --force/*.json
+!videos --force/*.js
+!videos --force/*.ts
+public/_next-video
