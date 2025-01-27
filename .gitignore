@@ -60,3 +60,5 @@ videos --force/*
 !videos --force/*.js
 !videos --force/*.ts
 public/_next-video
+
+public/videos/
