@@ -9,8 +9,9 @@ import {
   SignedOut,
   UserButton
 } from '@clerk/nextjs'
-import Navbar from '@/components/Navbar';
+// import Navbar from '@/components/Navbar';
 import AuthShowcase from '@/components/AuthShowcase';
+import RightSidebar from '@/components/RightSidebar';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,14 +36,15 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}>
-          <Navbar />
-          <main className="flex flex-col items-center justify-center min-h-screen pt-16">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white overflow-hidden`}>
+          {/* <Navbar /> */}
+          <main className="h-screen">
             <AuthShowcase />
             <SignedIn>
               {children}
             </SignedIn>
           </main>
+          <RightSidebar />
         </body>
       </html>
     </ClerkProvider>
