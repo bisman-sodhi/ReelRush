@@ -10,6 +10,7 @@
     "next-video": "next-video"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.10.3",
     "next": "15.1.6",
     "next-video": "^2.0.1",
     "react": "^19.0.0",
