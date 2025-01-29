@@ -10,7 +10,7 @@ interface VideoActionsProps {
 export default function VideoActions({ videoId }: VideoActionsProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [comments, setComments] = useState(0);
+  const comments = 0;
 
   const handleLike = () => {
     setIsLiked(!isLiked);

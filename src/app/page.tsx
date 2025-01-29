@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Video from 'next-video';
 import VideoPlayer from '../components/VideoPlayer';
 import logo from '/public/logo/v3ReelRush.png';
 import Link from "next/link";

@@ -1,6 +1,6 @@
 'use client';
 
-import { SignInButton, SignUpButton, SignedIn, SignedOut } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, SignedOut } from '@clerk/nextjs';
 
 export default function AuthShowcase() {
   return (
