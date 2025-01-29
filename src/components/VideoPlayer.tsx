@@ -23,10 +23,10 @@ export default function VideoPlayer() {
           key={video.id}
           // className="h-screen flex justify-center items-center snap-start snap-always"
           className="h-screen flex justify-center snap-start snap-always"
-
         >
-          <div className="h-full aspect-[9/16]">
+          <div className="relative h-full aspect-[9/16]">
             <video 
+              key={video.id}
               src={video.src}
               className="h-full w-full object-contain"
               controls

@@ -1,6 +1,7 @@
 'use server'
 
 import { auth, clerkClient } from '@clerk/nextjs/server'
+import { supabase } from '@/lib/supabase'
 
 export const completeOnboarding = async (formData: FormData) => {
   const client = await clerkClient()
@@ -26,4 +27,15 @@ export const completeOnboarding = async (formData: FormData) => {
     console.log('error', e)
     return { message: 'Error Updating Profile' }
   }
+}
+
+export async function saveUserInterests(userId: string, interests: string[]) {
+  const { error } = await supabase
+    .from('users')
+    .upsert({ 
+      id: userId, 
+      interests 
+    });
+  
+  if (error) throw error;
 }

@@ -29,7 +29,7 @@ export default function HomePage() {
             <Image
               src={logo}
               alt="ReelRush"
-              width={150}
+              width={200}
               height={75}
               className="mb-6"
             />
@@ -39,8 +39,8 @@ export default function HomePage() {
           <div className="w-full max-w-[200px] mb-8">
             <input
               type="text"
-              placeholder="Search"
-              className="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:border-black"
+              placeholder="Search..."
+              className="w-full px-4 py-2 text-black rounded-full border border-gray-300 focus:outline-none focus:border-black"
             />
           </div>
 

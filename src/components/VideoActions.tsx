@@ -39,31 +39,31 @@ export default function VideoActions({ videoId }: VideoActionsProps) {
         className="flex flex-col items-center gap-1"
       >
         <div className={`p-2 rounded-full bg-black/20 backdrop-blur-lg hover:bg-black/40 transition-all ${
-          isLiked ? 'text-red-500' : 'text-white'
+          isLiked ? 'text-red-500' : 'text-black'
         }`}>
           <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
         </div>
-        <span className="text-sm text-white">{likes}</span>
+        <span className="text-sm text-black">{likes}</span>
       </button>
 
       <button 
         onClick={handleComment}
         className="flex flex-col items-center gap-1"
       >
-        <div className="p-2 rounded-full bg-black/20 backdrop-blur-lg hover:bg-black/40 transition-all text-white">
+        <div className="p-2 rounded-full bg-black/20 backdrop-blur-lg hover:bg-black/40 transition-all text-black">
           <MessageCircle className="w-6 h-6" />
         </div>
-        <span className="text-sm text-white">{comments}</span>
+        <span className="text-sm text-black">{comments}</span>
       </button>
 
       <button 
         onClick={handleShare}
         className="flex flex-col items-center gap-1"
       >
-        <div className="p-2 rounded-full bg-black/20 backdrop-blur-lg hover:bg-black/40 transition-all text-white">
+        <div className="p-2 rounded-full bg-black/20 backdrop-blur-lg hover:bg-black/40 transition-all text-black">
           <Share className="w-6 h-6" />
         </div>
-        <span className="text-sm text-white">Share</span>
+        <span className="text-sm text-black">Share</span>
       </button>
     </div>
   );
