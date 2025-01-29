@@ -10,13 +10,12 @@
 //     </main>
 //   );
 // }
-import { put } from "@vercel/blob";
+// import { put } from "@vercel/blob";
 
-const { url } = await put('videos/dog1.MP4', 'Hello World!', { access: 'public' });
+// const { url } = await put('videos/dog1.MP4', 'Hello World!', { access: 'public' });
 
-import Video from 'next-video';
-import dogVideo from '/videos/dog1.MP4';
+// import Video from 'next-video';
  
-export default function Page() {
-  return <Video src={url} />;
-}
+// export default function Page() {
+//   return <Video src={url} />;
+// }

@@ -43,6 +43,9 @@ export default function OnboardingComponent() {
         <div className="p-8">
           <h3 className="text-xl font-semibold text-gray-900">Welcome to ReelRush!</h3>
           <p className="mt-2 text-sm text-gray-600">Let's set up your profile</p>
+          <p className="mt-4 text-gray-600 text-sm">
+            {"Don't worry, you can change these later"}
+          </p>
         </div>
         
         <form action={handleSubmit}>
