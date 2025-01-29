@@ -8,6 +8,7 @@ import {
 // import Navbar from '@/components/Navbar';
 import AuthShowcase from '@/components/AuthShowcase';
 import RightSidebar from '@/components/RightSidebar';
+import { VideoProvider } from '@/context/VideoContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,14 +40,16 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white overflow-hidden`}>
-          {/* <Navbar /> */}
-          <main className="h-screen">
-            <AuthShowcase />
-            <SignedIn>
-              {children}
-            </SignedIn>
-          </main>
-          <RightSidebar />
+          <VideoProvider>
+            {/* <Navbar /> */}
+            <main className="h-screen">
+              <AuthShowcase />
+              <SignedIn>
+                {children}
+              </SignedIn>
+            </main>
+            <RightSidebar />
+          </VideoProvider>
         </body>
       </html>
     </ClerkProvider>
