@@ -62,3 +62,10 @@ videos --force/*
 public/_next-video
 
 public/videos/
+
+# next-video
+videos/*
+!videos/*.json
+!videos/*.js
+!videos/*.ts
+public/_next-video

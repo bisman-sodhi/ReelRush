@@ -36,7 +36,7 @@ export default function RightSidebar() {
 
         {/* Navigation Buttons */}
         <div className="flex flex-col items-center gap-8 mt-8">
-          <Link href="/home" className="p-3 rounded-full hover:bg-gray-100 transition-colors">
+          <Link href="/profile" className="p-3 rounded-full hover:bg-gray-100 transition-colors">
             <Home size={24} />
           </Link>
           <Link href="/following" className="p-3 rounded-full hover:bg-gray-100 transition-colors">

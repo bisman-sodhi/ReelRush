@@ -26,6 +26,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ReelRush",
   description: "Reels and Feels ;)",
+  icons: {
+    icon: [
+      { url: './favicon.ico', type: 'image/x-icon' },
+      { url: './favicon.ico', sizes: '32x32' },
+    ],
+  },
 };
 
 export default function RootLayout({
