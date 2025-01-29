@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState } from 'react';
+import videoData from '../data/videoData.json';
+import { generateIncrementalId } from '../utils/idGenerator';
 
 // create video object
 interface Video {
@@ -18,20 +20,11 @@ interface VideoContextType {
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
 
 export function VideoProvider({ children }: { children: React.ReactNode }) {
-  const [videos, setVideos] = useState<Video[]>([
-    { 
-      id: 'video-3', 
-      src: 'https://niafmdtam5fgm1cs.public.blob.vercel-storage.com/dog2-JoxcUSf5oo9P47PoJrJfUeYr6oxAPp.MP4'
-    },
-    { 
-      id: 'video-4', 
-      src: 'https://niafmdtam5fgm1cs.public.blob.vercel-storage.com/dog3-FiGUVJn48jSel38f7XgYBsnu5a6gRb.mp4'
-    },
-  ]);
+  const [videos, setVideos] = useState<Video[]>(videoData.videos);
 
   const addVideo = (video: { src: string }) => {
     const newVideo = {
-      id: `video-${Date.now()}`, // Generate unique ID
+      id: generateIncrementalId(),
       src: video.src,
     };
     setVideos(prevVideos => [newVideo, ...prevVideos]);

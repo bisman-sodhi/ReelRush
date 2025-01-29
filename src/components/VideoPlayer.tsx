@@ -1,26 +1,18 @@
 'use client';
 import VideoActions from './VideoActions';
-// const d2 = 'https://niafmdtam5fgm1cs.public.blob.vercel-storage.com/dog2-JoxcUSf5oo9P47PoJrJfUeYr6oxAPp.MP4'
-// const d3 = 'https://niafmdtam5fgm1cs.public.blob.vercel-storage.com/dog3-FiGUVJn48jSel38f7XgYBsnu5a6gRb.mp4'
-// const videos = [
-//   { id: 'video-3', src: d2 },
-//   { id: 'video-4', src: d3 },
-// ];
 
 import { useVideos } from '@/context/VideoContext';
 import { useEffect, useRef } from 'react';
 
 export default function VideoPlayer() {
   const { videos } = useVideos();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); 
+  // const topRef = useRef(null); // Reference for scrolling to top
 
   // Scroll to top when videos array changes
   useEffect(() => {
     if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
+      containerRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [videos]);
 
@@ -38,7 +30,7 @@ export default function VideoPlayer() {
               className="h-full w-full object-contain"
               controls
               playsInline
-              autoPlay={false}
+              autoPlay={true}
               muted
             />
             <VideoActions videoId={video.id} />
