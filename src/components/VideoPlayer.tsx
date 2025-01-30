@@ -6,7 +6,8 @@ import { useEffect, useRef } from 'react';
 
 export default function VideoPlayer() {
   const { videos } = useVideos();
-  const containerRef = useRef<HTMLDivElement>(null); 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // const topRef = useRef(null); // Reference for scrolling to top
 
   // Scroll to top when videos array changes
@@ -17,15 +18,14 @@ export default function VideoPlayer() {
   }, [videos]);
 
   return (
-    <div className="w-full" ref={containerRef}>
+    <>
       {videos.map((video) => (
         <div 
           key={video.id}
-          className="h-screen flex justify-center snap-start snap-always"
+          className="h-screen w-full flex items-center justify-center snap-start snap-always"
         >
-          <div className="h-full aspect-[9/16]">
+          <div className="relative h-full aspect-[9/16]">
             <video 
-              key={video.id}
               src={video.src}
               className="h-full w-full object-contain"
               controls
@@ -37,7 +37,7 @@ export default function VideoPlayer() {
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 }
 

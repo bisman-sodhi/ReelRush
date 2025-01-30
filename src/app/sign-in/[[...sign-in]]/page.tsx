@@ -4,7 +4,7 @@ export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <SignIn
-        afterSignInUrl="/"  // This will still redirect to onboarding if needed via middleware
+        afterSignInUrl="/feed"  // This will still redirect to onboarding if needed via middleware
         appearance={{
           elements: {
             rootBox: "mx-auto",

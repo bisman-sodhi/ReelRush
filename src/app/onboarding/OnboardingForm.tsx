@@ -33,7 +33,8 @@ export default function OnboardingForm() {
       
       if (result.message === 'Profile Updated Successfully') {
         // Use window.location for a hard redirect
-        window.location.href = '/'
+        window.location.href = '/feed'
+        // <FeedPage />
       }
     } catch (error) {
       console.error('Error:', error)
@@ -59,7 +60,7 @@ export default function OnboardingForm() {
       <div className="mb-4">
         <label className="block mb-2">Select at least 5 interests</label>
         <p className="text-xs text-gray-500 mb-3">
-          Selected: {interests.length}/5
+          Selected: {interests.length}/5 (min 5)
         </p>
         <div className="flex flex-wrap gap-2">
           {INTERESTS.map((interest) => (
