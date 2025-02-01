@@ -2,18 +2,13 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import { Home, Users, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
-import { useVideos } from '@/context/VideoContext';
+import { useRef } from 'react';
 import UploadingIndicator from './UploadingIndicator';
-
-interface NavbarProps {
-  onUpload: (file: File) => void;
-}
+import { useVideoUpload } from '@/app/upload/uploadUtils';
 
 export default function RightSidebar() {
-  const [isUploading, setIsUploading] = useState(false);
-  const { addVideo } = useVideos();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isUploading, handleVideoUpload } = useVideoUpload();
 
   const handleClick = () => {
     if (fileInputRef.current) {
@@ -21,43 +16,11 @@ export default function RightSidebar() {
     }
   };
 
-  const handleUpload = async (file: File) => {
-    if (!file.type.startsWith('video/')) {
-      console.error('Please upload a video file');
-      return;
-    }
-
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        addVideo({ src: data.url });
-        // Scroll to top after successful upload
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      }
-    } catch (error) {
-      console.error("Upload failed:", error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   return (
     <>
       <div className="fixed top-0 right-0 h-screen w-[100px] bg-black border-l z-40">
         <div className="flex flex-col h-full">
-          {/* Auth/Profile - positioned at top */}
+          {/* Clerk Profile - positioned at top */}
           <div className="flex items-center justify-center w-full py-4">
             <SignedOut>
               <SignInButton mode="modal">
@@ -86,12 +49,17 @@ export default function RightSidebar() {
 
           {/* Navigation Buttons - centered vertically */}
           <div className="flex-1 flex flex-col items-center justify-center gap-8">
+            {/* Home Button */}
             <Link href="/profile" className="p-3 rounded-full hover:bg-gray-100 transition-colors">
               <Home size={24} />
             </Link>
+            
+            {/* Following Button */}
             <Link href="/following" className="p-3 rounded-full hover:bg-gray-100 transition-colors">
               <Users size={24} />
             </Link>
+
+            {/* Upload Button */}
             <button onClick={handleClick} className="p-3 rounded-full hover:bg-gray-100 transition-colors">
               <Upload size={24} />
             </button>
@@ -106,7 +74,7 @@ export default function RightSidebar() {
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) {
-                handleUpload(file);
+                handleVideoUpload(file);
               }
             }}
           />

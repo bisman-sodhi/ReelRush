@@ -22,6 +22,7 @@ export const completeOnboarding = async (formData: FormData) => {
         id: userId,
         username,
         interests,
+        upload_count: 0,
       })
 
     if (error) throw error
@@ -32,12 +33,13 @@ export const completeOnboarding = async (formData: FormData) => {
   }
 }
 
-export async function saveUserInterests(userId: string, interests: string[]) {
+export async function saveUserInterests(userId: string, interests: string[], upload_count: number) {
   const { error } = await supabase
     .from('users')
     .upsert({ 
       id: userId, 
-      interests 
+      interests,
+      upload_count,
     });
   
   if (error) throw error;

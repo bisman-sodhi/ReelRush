@@ -2,7 +2,7 @@
 import VideoActions from './VideoActions';
 
 import { useVideos } from '@/context/VideoContext';
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 export default function VideoPlayer() {
   const { videos } = useVideos();
@@ -10,12 +10,17 @@ export default function VideoPlayer() {
 
   // const topRef = useRef(null); // Reference for scrolling to top
 
-  // Scroll to top when videos array changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [videos]);
+  // // Scroll to top when videos array changes
+  // useEffect(() => {
+  //   if (containerRef.current) {
+  //     containerRef.current.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [videos]);
+
+  const handleVideoEnd = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.target as HTMLVideoElement;
+    video.play(); // Replay when ended
+  };
 
   return (
     <>
@@ -32,8 +37,10 @@ export default function VideoPlayer() {
               playsInline
               autoPlay={true}
               muted
+              loop
+              onEnded={handleVideoEnd}
             />
-            <VideoActions videoId={video.id} />
+            {video.id && <VideoActions videoId={video.id} />}
           </div>
         </div>
       ))}
