@@ -11,8 +11,17 @@ export default function RightSidebar() {
   const { isUploading, handleVideoUpload } = useVideoUpload();
 
   const handleClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    console.log("Upload button clicked");
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    console.log("File selected:", file);
+    if (file) {
+      await handleVideoUpload(file);
+      // Reset input so same file can be selected again
+      event.target.value = '';
     }
   };
 
@@ -60,7 +69,10 @@ export default function RightSidebar() {
             </Link>
 
             {/* Upload Button */}
-            <button onClick={handleClick} className="p-3 rounded-full hover:bg-gray-100 transition-colors">
+            <button 
+              onClick={handleClick} 
+              className="p-3 rounded-full hover:bg-gray-100 transition-colors"
+            >
               <Upload size={24} />
             </button>
           </div>
@@ -71,12 +83,7 @@ export default function RightSidebar() {
             accept="video/*"
             ref={fileInputRef}
             className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                handleVideoUpload(file);
-              }
-            }}
+            onChange={handleFileChange}
           />
         </div>
       </div>

@@ -14,6 +14,7 @@ export const uploadVideo = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);
 
+  // Send to upload API endpoint
   const res = await fetch("/api/upload", {
     method: "POST",
     body: formData,
@@ -24,7 +25,7 @@ export const uploadVideo = async (file: File) => {
     throw new Error('Upload failed: No URL returned');
   }
 
-  return data.url;
+  return { url: data.url, description: data.description };
 };
 
 // Hook for video upload
@@ -34,35 +35,43 @@ export function useVideoUpload() {
   const { userId } = useAuth();
 
   const handleVideoUpload = async (file: File) => {
+    if (!file) {
+      console.log("No file selected");
+      return;
+    }
+
+    console.log("File selected:", file.name, file.type, file.size);
     setIsUploading(true);
+    
     try {
-      const url = await uploadVideo(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
       
-      if (userId) {
-        // First, save video
-        const { error: videoError } = await supabase
-          .from('videos')
-          .insert({ 
-            user_id: userId,
-            url: url
-          });
-
-        if (videoError) throw videoError;
-
-        // Then, increment count
-        const { error: countError } = await supabase.rpc('increment_upload_count', {
-          user_id: userId
-        });
-
-        if (countError) throw countError;
-
-        // Add to context (will appear at top of feed)
-        addVideo({ src: url });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (!data.url) {
+        throw new Error('Upload failed - no URL returned');
       }
+
+      // Save to Supabase
+      if (userId) {
+        await supabase
+          .from('videos')
+          .insert({
+            user_id: userId,
+            url: data.url
+          });
+      }
+
+      addVideo({ src: data.url });
     } catch (error) {
       console.error("Upload failed:", error);
-      throw error;
+      alert("Failed to upload video. Please try again.");
     } finally {
       setIsUploading(false);
     }
