@@ -5,23 +5,71 @@ import { GoogleAIFileManager, FileState } from "@google/generative-ai/server";
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-// import { fetchFile } from '@ffmpeg/util';
-// import { createFFmpeg } from '@ffmpeg/ffmpeg';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile } from '@ffmpeg/util';
 import { Groq } from 'groq-sdk';
-
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { pipeline } from '@xenova/transformers';
+import { auth } from '@clerk/nextjs/server'
 
 // Initialize Groq client
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+async function extractAudio(videoUrl: string): Promise<Buffer> {
+  try {
+    // Download video file
+    const response = await fetch(videoUrl);
+    const videoBuffer = Buffer.from(await response.arrayBuffer());
+    
+    // Save to temp file
+    const tempDir = tmpdir();
+    const inputPath = join(tempDir, `input-${Date.now()}.mp4`);
+    const outputPath = join(tempDir, `output-${Date.now()}.mp3`);
+    
+    await fs.writeFile(inputPath, videoBuffer);
+    
+    // Convert to audio using child_process
+    const { exec } = require('child_process');
+    await new Promise((resolve, reject) => {
+      exec(
+        `ffmpeg -i ${inputPath} -vn -acodec libmp3lame ${outputPath}`,
+        (error: any) => {
+          if (error) reject(error);
+          else resolve(null);
+        }
+      );
+    });
+    
+    // Read output file
+    const audioBuffer = await fs.readFile(outputPath);
+    
+    // Cleanup
+    await Promise.all([
+      fs.unlink(inputPath),
+      fs.unlink(outputPath)
+    ]);
+    
+    return audioBuffer;
+  } catch (error) {
+    console.error('Audio extraction error:', error);
+    throw error;
+  }
+}
+
 async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   try {
-    const base64Audio = audioBuffer.toString('base64');
+    // Create a File object from the buffer
+    const audioFile = new File(
+      [audioBuffer], 
+      'audio.mp3', 
+      { type: 'audio/mp3' }
+    );
     
     const response = await groq.audio.transcriptions.create({
       model: "whisper-large-v3-turbo",
-      file: base64Audio,
+      file: audioFile,
       response_format: "text"
     });
 
@@ -36,6 +84,33 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
+
+// Cache the pipeline
+let embedder: any = null;
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    if (!text?.trim()) {
+      console.error("Empty text provided for embedding");
+      return new Array(384).fill(0); // MiniLM outputs 384-dim vectors
+    }
+
+    // Initialize embedder if not already done
+    if (!embedder) {
+      embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    }
+
+    const output = await embedder(text, { 
+      pooling: 'mean', 
+      normalize: true 
+    });
+
+    return Array.from(output.data);
+  } catch (error) {
+    console.error("Error generating embedding:", error);
+    return new Array(384).fill(0);
+  }
+}
 
 async function generateVideoDescription(fileUrl: string): Promise<string> {
   try {
@@ -84,51 +159,69 @@ async function generateVideoDescription(fileUrl: string): Promise<string> {
   }
 }
 
-async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    const response = await groq.chat.completions.create({
-      model: "mixtral-8x7b-32768",
-      messages: [
-        {
-          role: "system",
-          content: "You are an embedding generator. Convert the input text into a numerical embedding vector with 1536 dimensions. Return only the vector as a JSON array of numbers."
-        },
-        {
-          role: "user",
-          content: text
-        }
-      ],
-      temperature: 0, // Keep it deterministic
-      max_tokens: 2048 // Adjust based on your needs
-    });
-
-    const embedding = JSON.parse(response.choices[0].message.content || '[]');
-    return embedding;
-  } catch (error) {
-    console.error("Error generating embedding:", error);
-    throw error;
-  }
-}
-
 export async function POST(request: Request) {
   try {
+    // 1. Upload video to Vercel Blob
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
-    if (!file) {
-      return NextResponse.json({ error: 'No file received.' }, { status: 400 });
+    const { userId } = await auth();
+
+    if (!file || !userId) {
+      return NextResponse.json({ error: 'No file or unauthorized' }, { status: 400 });
     }
 
     // Upload to Vercel Blob
     const blob = await put(file.name, file, { access: 'public' });
 
-    // Generate description
+    // 2. Generate video description using Gemini
     const description = await generateVideoDescription(blob.url);
 
+    // 3. Extract audio and transcribe using Whisper
+    const audioBuffer = await extractAudio(blob.url);
+    const transcript = await transcribeAudio(audioBuffer);
+
+    // 4. Generate embeddings for both description and transcript
+    const [descriptionEmbedding, transcriptEmbedding] = await Promise.all([
+      generateEmbedding(description),
+      generateEmbedding(transcript)
+    ]);
+
+    // 5. Combine embeddings (average them)
+    const combinedEmbedding = descriptionEmbedding.map((val, idx) => 
+      (val + transcriptEmbedding[idx]) / 2
+    );
+    console.log("combinedEmbedding", combinedEmbedding);
+
+    // Save to Supabase
+    const { error: videoError } = await supabaseAdmin
+      .from('videos')
+      .insert({
+        user_id: userId,
+        url: blob.url,
+        description: `[${combinedEmbedding.join(',')}]`,
+        title: file.name,
+        text_description: description,
+        created_at: new Date().toISOString()
+      });
+
+    if (videoError) throw videoError;
+
+    // Silently update upload count without throwing errors
+    try {
+      await supabaseAdmin
+        .from('users')
+        .update({ 
+          upload_count: supabaseAdmin.rpc('increment', { row_count: 1 }) 
+        })
+        .eq('id', userId);
+    } catch (countError) {
+      console.error('Failed to update upload count:', countError);
+      // Don't throw error - allow upload to succeed
+    }
 
     return NextResponse.json({ 
       url: blob.url,
-      description: description 
+      description: description
     });
   } catch (error) {
     console.error('Upload error:', error);
