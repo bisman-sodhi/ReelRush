@@ -159,6 +159,13 @@ async function generateVideoDescription(fileUrl: string): Promise<string> {
   }
 }
 
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dotProduct = a.reduce((sum, a_i, i) => sum + a_i * b[i], 0);
+  const magnitudeA = Math.sqrt(a.reduce((sum, a_i) => sum + a_i * a_i, 0));
+  const magnitudeB = Math.sqrt(b.reduce((sum, b_i) => sum + b_i * b_i, 0));
+  return dotProduct / (magnitudeA * magnitudeB);
+}
+
 export async function POST(request: Request) {
   try {
     // 1. Upload video to Vercel Blob
@@ -191,6 +198,25 @@ export async function POST(request: Request) {
       (val + transcriptEmbedding[idx]) / 2
     );
     console.log("combinedEmbedding", combinedEmbedding);
+
+    // Get user's interests embedding
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('interests_embedding')
+      .eq('id', userId)
+      .single();
+
+    if (userData?.interests_embedding) {
+      // Convert string vector to number array
+      const userEmbedding = userData.interests_embedding
+        .replace(/[\[\]]/g, '')  // Remove brackets
+        .split(',')              // Split into array
+        .map(Number);            // Convert to numbers
+      
+      // Calculate similarity
+      const similarity = cosineSimilarity(combinedEmbedding, userEmbedding);
+      console.log('Similarity score between video and user interests:', similarity);
+    }
 
     // Save to Supabase
     const { error: videoError } = await supabaseAdmin
