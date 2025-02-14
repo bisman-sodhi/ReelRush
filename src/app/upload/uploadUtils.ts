@@ -60,10 +60,12 @@ export function useVideoUpload() {
 
       // Add to context with newest first
       if (userId) {
-        addVideo({ 
+        addVideo({
           id: Date.now().toString(),
-          src: data.url,
-          created_at: new Date().toISOString()
+          url: data.url,
+          created_at: new Date().toISOString(),
+          description: '',
+          text_description: ''
         }, true);
       }
     } catch (error) {

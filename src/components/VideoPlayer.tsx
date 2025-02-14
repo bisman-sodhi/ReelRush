@@ -31,7 +31,7 @@ export default function VideoPlayer() {
         >
           <div className="relative h-full aspect-[9/16]">
             <video 
-              src={video.src}
+              src={video.url}
               className="h-full w-full object-contain"
               controls
               playsInline
@@ -39,6 +39,7 @@ export default function VideoPlayer() {
               muted
               loop
               onEnded={handleVideoEnd}
+              onError={(e) => console.error('Video error:', e)}
             />
             {video.id && <VideoActions videoId={video.id} />}
           </div>

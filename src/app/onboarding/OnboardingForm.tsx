@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { completeOnboarding } from './_actions'
 
 const INTERESTS = [
-  'Music', 'Dance', 'Food', 'Travel', 'Fashion', 
-  'Gaming', 'Sports', 'Art', 'Technology', 'Fitness',
+  'Music', 'Dance', 'Books', 'Food', 'Travel', 'Fashion', 
+  'Gaming', 'Dogs', 'Sports', 'Art', 'Technology', 'Fitness',
   'Beauty', 'Comedy', 'Education', 'Pets', 'Nature'
 ];
 

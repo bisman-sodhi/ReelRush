@@ -17,7 +17,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-async function extractAudio(videoUrl: string): Promise<Buffer> {
+export async function extractAudio(videoUrl: string): Promise<Buffer> {
   try {
     // Download video file
     const response = await fetch(videoUrl);
@@ -58,7 +58,7 @@ async function extractAudio(videoUrl: string): Promise<Buffer> {
   }
 }
 
-async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
+export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   try {
     // Create a File object from the buffer
     const audioFile = new File(
@@ -88,7 +88,7 @@ const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
 // Cache the pipeline
 let embedder: any = null;
 
-async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(text: string): Promise<number[]> {
   try {
     if (!text?.trim()) {
       console.error("Empty text provided for embedding");
@@ -112,7 +112,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-async function generateVideoDescription(fileUrl: string): Promise<string> {
+export async function generateVideoDescription(fileUrl: string): Promise<string> {
   try {
     // Download the file
     const response = await fetch(fileUrl);
