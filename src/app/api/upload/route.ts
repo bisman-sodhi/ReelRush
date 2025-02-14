@@ -146,7 +146,16 @@ export async function generateVideoDescription(fileUrl: string): Promise<VideoMe
     }
 
     // Generate description
-    const prompt = "Describe this video clip in detail. After your description, write 'Hashtags:' on a new line followed by five unique hashtags most relevant to this video.";
+    const INTERESTS = [
+      'Music', 'Dance', 'Books', 'Food', 'Travel', 'Fashion', 
+      'Gaming', 'Dogs', 'Sports', 'Art', 'Technology', 'Fitness',
+      'Beauty', 'Comedy', 'Education', 'Pets', 'Nature'
+    ];
+
+    const prompt = `Describe this video clip in detail. After your description, write 'Hashtags:' on a new line.
+    For the hashtags, include at least 2-3 hashtags from this specific list of interests if relevant: ${INTERESTS.join(', ')}.
+    Then add 2-3 more specific hashtags about the video content.
+    All hashtags should start with #.`;
     const videoPart = {
       fileData: {
         fileUri: uploadResult.file.uri,
@@ -224,7 +233,7 @@ export async function POST(request: Request) {
 
     // 5. Combine embeddings (weighted average)
     const combinedEmbedding = descriptionEmbedding.map((val, idx) => 
-      (val * 0.4 + hashtagEmbedding[idx] * 0.4 + transcriptEmbedding[idx] * 0.2)
+      (val * 0.3 + hashtagEmbedding[idx] * 0.5 + transcriptEmbedding[idx] * 0.2)  // More weight to hashtags
     );
 
     // Get user's interests embedding

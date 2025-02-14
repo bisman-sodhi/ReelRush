@@ -13,6 +13,7 @@ interface Video {
   text_description?: string;
   similarity?: number;
   created_at?: string;
+  hashtags?: string[];
 }
 
 // create video list
@@ -89,13 +90,22 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
           .split(',')
           .map(Number);
 
-        const videosWithScores = videosData.map(video => ({
-          ...video,
-          similarity: cosineSimilarity(
+        const videosWithScores = videosData.map(video => {
+          const similarity = cosineSimilarity(
             userEmbedding,
             video.description.replace(/[\[\]]/g, '').split(',').map(Number)
-          )
-        }));
+          );
+          
+          console.log(`\nVideo: ${video.title}`);
+          console.log('Text Description:', video.text_description);
+          console.log('Hashtags:', video.hashtags);
+          console.log('Similarity Score:', similarity);
+          
+          return {
+            ...video,
+            similarity
+          };
+        });
 
         // Sort by similarity (highest first)
         const sortedVideos = videosWithScores.sort((a, b) => 

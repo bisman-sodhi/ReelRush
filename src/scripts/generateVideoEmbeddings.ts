@@ -30,7 +30,7 @@ async function generateAndStoreEmbeddings() {
 
       // Combine embeddings (weighted)
       const embedding = descEmbedding.map((val, idx) => 
-        (val * 0.6 + hashtagEmbedding[idx] * 0.4)
+        (val * 0.3 + hashtagEmbedding[idx] * 0.7)
       );
 
       // 3. Store in Supabase
