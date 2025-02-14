@@ -4,8 +4,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { supabase } from '@/lib/supabase';
 import { cosineSimilarity } from '@/utils/embeddings';
-import videoData from '../data/videoData.json';
-import { generateIncrementalId } from '../utils/idGenerator';
 
 // create video object
 interface Video {
@@ -27,65 +25,95 @@ interface VideoContextType {
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
 
 export function VideoProvider({ children }: { children: React.ReactNode }) {
-  const [videos, setVideos] = useState<Video[]>(
-    videoData.videos.map(video => ({
-      ...video,
-      url: video.src,
-      description: '',
-      text_description: ''
-    }))
-  );
+  const [videos, setVideos] = useState<Video[]>([]);
   const { userId } = useAuth();
 
   useEffect(() => {
     async function loadPersonalizedFeed() {
-      // Get all videos with their embeddings
-      const { data: videosData } = await supabase
-        .from('videos')
-        .select('*');
+      try {
+        // First check if user exists in Supabase
+        if (userId) {
+          const { data: userExists } = await supabase
+            .from('users')
+            .select('id, interests')  // Also get interests for logging
+            .eq('id', userId)
+            .single();
 
-      console.log('Videos from Supabase:', videosData);
+          // If user doesn't exist yet (not onboarded), don't try to personalize
+          if (!userExists) {
+            console.log('📢 Loading default feed (user not onboarded yet)');
+            const { data: defaultVideos } = await supabase
+              .from('videos')
+              .select('*');
+            setVideos(defaultVideos || []);
+            return;
+          }
+          console.log('👤 User interests:', userExists.interests);
+        }
 
-      if (!userId || !videosData) {
-        setVideos(videosData || []);
-        return;
+        // Get all videos with their embeddings
+        const { data: videosData, error: videosError } = await supabase
+          .from('videos')
+          .select('*');
+
+        if (videosError) throw videosError;
+        console.log('Videos from Supabase:', videosData);
+
+        if (!userId || !videosData) {
+          console.log('📢 Loading default feed (no user or videos)');
+          setVideos(videosData || []);
+          return;
+        }
+
+        // Get user's interests embedding
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('interests_embedding')
+          .eq('id', userId)
+          .single();
+
+        if (userError) throw userError;
+        console.log('User interests:', userData);
+
+        if (!userData?.interests_embedding) {
+          console.log('📢 Loading default feed (no user interests embedding)');
+          setVideos(videosData);
+          return;
+        }
+
+        console.log('🎯 Generating personalized feed...');
+
+        // Calculate similarity scores
+        const userEmbedding = userData.interests_embedding
+          .replace(/[\[\]]/g, '')
+          .split(',')
+          .map(Number);
+
+        const videosWithScores = videosData.map(video => ({
+          ...video,
+          similarity: cosineSimilarity(
+            userEmbedding,
+            video.description.replace(/[\[\]]/g, '').split(',').map(Number)
+          )
+        }));
+
+        // Sort by similarity (highest first)
+        const sortedVideos = videosWithScores.sort((a, b) => 
+          (b.similarity || 0) - (a.similarity || 0)
+        );
+
+        console.log('🎬 Videos ranked by similarity:');
+        sortedVideos.forEach(video => {
+          console.log(`   ${video.title || video.id}: ${(video.similarity || 0).toFixed(3)} similarity`);
+        });
+
+        setVideos(sortedVideos);
+      } catch (error) {
+        console.error('❌ Error loading personalized feed:', error);
+        const { data } = await supabase.from('videos').select('*');
+        console.log('📢 Falling back to default feed');
+        setVideos(data || []);
       }
-
-      // Get user's interests embedding
-      const { data: userData } = await supabase
-        .from('users')
-        .select('interests_embedding')
-        .eq('id', userId)
-        .single();
-
-      console.log('User interests:', userData);
-
-      if (!userData?.interests_embedding) {
-        setVideos(videosData);
-        return;
-      }
-
-      // Calculate similarity scores
-      const userEmbedding = userData.interests_embedding
-        .replace(/[\[\]]/g, '')
-        .split(',')
-        .map(Number);
-
-      const videosWithScores = videosData.map(video => ({
-        ...video,
-        similarity: cosineSimilarity(
-          userEmbedding,
-          video.description.replace(/[\[\]]/g, '').split(',').map(Number)
-        )
-      }));
-
-      // Sort by similarity
-      const sortedVideos = videosWithScores.sort((a, b) => 
-        (b.similarity || 0) - (a.similarity || 0)
-      );
-
-      console.log('Videos sorted by similarity:', sortedVideos);
-      setVideos(sortedVideos);
     }
 
     loadPersonalizedFeed();
