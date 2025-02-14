@@ -92,12 +92,12 @@ async function generateEmbedding(text: string): Promise<number[]> {
   try {
     if (!text?.trim()) {
       console.error("Empty text provided for embedding");
-      return new Array(384).fill(0); // MiniLM outputs 384-dim vectors
+      return new Array(768).fill(0); // Match user interests size
     }
 
     // Initialize embedder if not already done
     if (!embedder) {
-      embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      embedder = await pipeline('feature-extraction', 'Xenova/all-mpnet-base-v2'); // 768 dimensions
     }
 
     const output = await embedder(text, { 
@@ -108,7 +108,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
     return Array.from(output.data);
   } catch (error) {
     console.error("Error generating embedding:", error);
-    return new Array(384).fill(0);
+    return new Array(768).fill(0);
   }
 }
 
