@@ -31,7 +31,7 @@ export default function OnboardingForm() {
 
       const result = await completeOnboarding(formData)
       
-      if (result.message === 'Profile Updated Successfully') {
+      if (result.success) {
         // Use window.location for a hard redirect
         window.location.href = '/feed'
         // <FeedPage />

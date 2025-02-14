@@ -2,46 +2,43 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-const isPublicRoute = createRouteMatcher(['/onboarding', '/sign-in', '/sign-up'])
+const isPublicRoute = createRouteMatcher(['/onboarding(.*)', '/sign-in(.*)', '/sign-up(.*)'])
 
-export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth()
-
-  // If the user isn't signed in and the route is private, redirect to sign-in
-  if (!userId && !isPublicRoute(req)) {
-    const signInUrl = new URL('/sign-in', req.url)
-    return NextResponse.redirect(signInUrl)
+export default clerkMiddleware(async (auth, request) => {
+  // Skip middleware for service worker
+  if (request.nextUrl.pathname === '/sw.js') {
+    return NextResponse.next();
   }
 
-  // If user is signed in, check if they've completed onboarding
-  if (userId) {
-    // Skip check if already on onboarding page
-    if (req.nextUrl.pathname === '/onboarding') {
-      return NextResponse.next()
-    }
+  if (!isPublicRoute(request)) {
+    // Protect non-public routes
+    await auth.protect();
+  }
 
-    // Check if user has completed onboarding
+  const { userId } = await auth()
+  
+  // Check onboarding status for authenticated users
+  if (userId && !request.nextUrl.pathname.startsWith('/onboarding')) {
     const { data: user } = await supabase
       .from('users')
       .select('interests')
       .eq('id', userId)
-      .single()
+      .single();
 
-    // If no user record or no interests, redirect to onboarding
-    if (!user || !user.interests || user.interests.length < 5) {
-      const onboardingUrl = new URL('/onboarding', req.url)
-      return NextResponse.redirect(onboardingUrl)
+    if (!user?.interests?.length || user.interests.length < 5) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 })
 
+// Update matcher pattern to match Clerk's requirements
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
+    '/((?!.+\\.[\\w]+$|_next).*)', 
+    '/',
     '/(api|trpc)(.*)',
-  ],
-}
+    '/sw.js'  // Add service worker to matcher
+  ]
+};
