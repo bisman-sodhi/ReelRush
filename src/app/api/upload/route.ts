@@ -87,7 +87,7 @@ const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
 
 // Cache the pipeline
 let embedder: any = null;
-
+// Generate embeddings for text
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
     if (!text?.trim()) {
@@ -112,7 +112,12 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-export async function generateVideoDescription(fileUrl: string): Promise<string> {
+interface VideoMetadata {
+  description: string;
+  hashtags: string[];
+}
+
+export async function generateVideoDescription(fileUrl: string): Promise<VideoMetadata> {
   try {
     // Download the file
     const response = await fetch(fileUrl);
@@ -141,7 +146,7 @@ export async function generateVideoDescription(fileUrl: string): Promise<string>
     }
 
     // Generate description
-    const prompt = "Describe this video clip in detail";
+    const prompt = "Describe this video clip in detail. After your description, write 'Hashtags:' on a new line followed by five unique hashtags most relevant to this video.";
     const videoPart = {
       fileData: {
         fileUri: uploadResult.file.uri,
@@ -150,12 +155,35 @@ export async function generateVideoDescription(fileUrl: string): Promise<string>
     };
 
     const result = await model.generateContent([prompt, videoPart]);
-    const description = result.response.text();
-    console.log(description);
-    return description;
+    const text = result.response.text();
+    
+    // Split at "Hashtags:" marker
+    const parts = text.split('Hashtags:');
+    const cleanDescription = parts[0].trim();
+    
+    // Parse hashtags after the "Hashtags:" marker
+    let cleanHashtags: string[] = [];
+    if (parts[1]) {
+      cleanHashtags = parts[1]
+        .trim()
+        .split(/[\s,]+/) // Split by whitespace or commas
+        .filter(tag => tag.startsWith('#'))
+        .map(tag => tag.replace('#', '').toLowerCase());
+    }
+
+    console.log('Parsed Description:', cleanDescription);
+    console.log('Parsed Hashtags:', cleanHashtags);
+
+    return {
+      description: cleanDescription,
+      hashtags: cleanHashtags.length > 0 ? cleanHashtags : [] 
+    };
   } catch (error) {
     console.error("Error generating description:", error);
-    throw error;
+    return {
+      description: "Error generating description",
+      hashtags: []
+    };
   }
 }
 
@@ -180,24 +208,24 @@ export async function POST(request: Request) {
     // Upload to Vercel Blob
     const blob = await put(file.name, file, { access: 'public' });
 
-    // 2. Generate video description using Gemini
-    const description = await generateVideoDescription(blob.url);
+    // 2. Generate video description and hashtags using Gemini
+    const { description, hashtags } = await generateVideoDescription(blob.url);
 
     // 3. Extract audio and transcribe using Whisper
     const audioBuffer = await extractAudio(blob.url);
     const transcript = await transcribeAudio(audioBuffer);
 
-    // 4. Generate embeddings for both description and transcript
-    const [descriptionEmbedding, transcriptEmbedding] = await Promise.all([
+    // 4. Generate embeddings for description, hashtags, and transcript
+    const [descriptionEmbedding, hashtagEmbedding, transcriptEmbedding] = await Promise.all([
       generateEmbedding(description),
+      generateEmbedding(hashtags.join(' ')),
       generateEmbedding(transcript)
     ]);
 
-    // 5. Combine embeddings (average them)
+    // 5. Combine embeddings (weighted average)
     const combinedEmbedding = descriptionEmbedding.map((val, idx) => 
-      (val + transcriptEmbedding[idx]) / 2
+      (val * 0.4 + hashtagEmbedding[idx] * 0.4 + transcriptEmbedding[idx] * 0.2)
     );
-    console.log("combinedEmbedding", combinedEmbedding);
 
     // Get user's interests embedding
     const { data: userData } = await supabaseAdmin
@@ -227,6 +255,7 @@ export async function POST(request: Request) {
         description: `[${combinedEmbedding.join(',')}]`,
         title: file.name,
         text_description: description,
+        hashtags: hashtags,
         created_at: new Date().toISOString()
       });
 

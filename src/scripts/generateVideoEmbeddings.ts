@@ -9,19 +9,31 @@ async function generateAndStoreEmbeddings() {
     for (const video of videoData.videos) {
       console.log(`Processing video ${video.id}...`);
       
-      // 1. Generate video description using Gemini
-      const description = await generateVideoDescription(video.src);
-      console.log(`Description: ${description}`);
+      // 1. Generate video description and hashtags
+      const { description, hashtags } = await generateVideoDescription(video.src);
+      console.log('-------------------');
+      console.log(`Video ${video.id}:`);
+      console.log('Description:', description);
+      console.log('Parsed Hashtags:', hashtags);
 
-      // 2. Generate embedding for the description
-      const embedding = await generateEmbedding(description);
-        // user_id: userId,
-        // url: blob.url,
-        // description: `[${combinedEmbedding.join(',')}]`,
-        // title: file.name,
-        // text_description: description,
-        // created_at: new Date().toISOString()
-      // 3. Store in Supabase with UUID
+      if (hashtags.length === 0) {
+        console.warn('⚠️ No hashtags generated for video:', video.id);
+      } else {
+        console.log('✅ Found', hashtags.length, 'hashtags');
+      }
+
+      // 2. Generate embeddings
+      const [descEmbedding, hashtagEmbedding] = await Promise.all([
+        generateEmbedding(description),
+        generateEmbedding(hashtags.join(' '))
+      ]);
+
+      // Combine embeddings (weighted)
+      const embedding = descEmbedding.map((val, idx) => 
+        (val * 0.6 + hashtagEmbedding[idx] * 0.4)
+      );
+
+      // 3. Store in Supabase
       const { error } = await supabaseAdmin
         .from('videos')
         .insert({
@@ -30,11 +42,15 @@ async function generateAndStoreEmbeddings() {
           description: `[${embedding.join(',')}]`,
           title: `video_${video.id}`,
           text_description: description,
+          hashtags: hashtags,  // This should now contain the actual hashtags
           created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
-      console.log(`Stored video ${video.id} successfully`);
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log(`Stored video ${video.id} with ${hashtags.length} hashtags`);
     }
   } catch (error) {
     console.error('Error:', error);
