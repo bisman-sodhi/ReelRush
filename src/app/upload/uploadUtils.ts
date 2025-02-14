@@ -58,17 +58,14 @@ export function useVideoUpload() {
         throw new Error('Upload failed - no URL returned');
       }
 
-      // Save to Supabase
+      // Add to context with newest first
       if (userId) {
-        await supabase
-          .from('videos')
-          .insert({
-            user_id: userId,
-            url: data.url
-          });
+        addVideo({ 
+          id: Date.now().toString(),
+          src: data.url,
+          created_at: new Date().toISOString()
+        }, true);
       }
-
-      addVideo({ src: data.url });
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Failed to upload video. Please try again.");
